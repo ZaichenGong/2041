@@ -1,0 +1,14 @@
+var a = 3;
+b = "abc123";
+// comment
+if (a){
+    var c = b;
+    d = "123";
+    // internal comment
+} else{
+    var e=a;
+    if (b) {
+        var d = 3;
+    } else  {}
+}
+f = 0;
