@@ -115,3 +115,26 @@ dune build
  but I haven't gotten around to that yet.)
 
 *)
+(*
+(* Define a new function to print the parsed file back out *)
+let printback_file (filename : string) : unit =
+  with_file print_all filename
+
+(* Updated usage message *)
+let usage_msg = Sys.executable_name ^ " [--printback <filename>]"
+
+(* Updated speclist to use the new printback_file function *)
+let speclist =
+  [("--printback", Arg.String printback_file, "Print the parsed file back out")]
+
+(* ... (previous code) ... *)
+
+(* Updated main function to use the new printback_file function *)
+let () =
+  Arg.parse
+    speclist
+    (fun x -> print_endline ("Unexpected argument: "^x))
+    usage_msg;
+
+  (* printing an extra newline at the end of it all *)
+  print_newline ()*)
