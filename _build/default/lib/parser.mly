@@ -1,78 +1,48 @@
 %{
-    open Ast
+  open Ast
 %}
-%token SEMI
-%token LCUR
-%token RCUR
+%token <string> IDENT
+%token COLON
 %token LPAREN
 %token RPAREN
-%token VAR
-%token IF
-%token ELSE
-%token ASSIGN
-%token LET
 %token PROVE
-%token HINT
-%token AXIOM
-%token INDUCTION
-%token TYPE
-%token <string> IDENT 
-%token <string> NUM 
-%token <string> STRING 
+%token LET
+%token EQUAL
 %token EOF
+%token HINT
+%token COMMA
+%token ENDCOMMENT /* there is no startcomment, as it's called "hint", and proper comments are ignored by the lexer */
+%token AXIOM
 %start main
-%type <statement List> main 
-%type <statement> statement 
-%type <expression> expression 
-%type <proof_statement> proof_statement
-%type <hint_option> hint_option
-%type <type_variant list> type_variants
-%% 
+%type <declaration list> main
+%%
 
 main:
-stmts = list(statement) ; EOF { stmts }
-
-statement:
-// Variable Declaration
-| VAR ; var = IDENT ; ASSIGN ; expr = expression SEMI { Declaration (var,expr) }
-// Assignment
-| var = IDENT ; ASSIGN ; expr = expression SEMI { Assignment (var, expr) }
-//Conditional
-| IF ; LPAREN ; expr = expression ; RPAREN ; LCUR ; stmts1 = list (statement) ; RCUR ;
-    ELSE ; LCUR ; stmts2 = list(statement) ; RCUR { If_Else (expr,stmts1, stmts2) }
-| TYPE ; type_name = IDENT ; variants = type_variants { TypeDeclaration (type_name, variants) }
-| proof = proof_statement { Proof proof }
-
+| list(declaration) EOF { $1 }
+declaration:
+| LET ; PROVE ; lemma_name=IDENT ; args = list(argument) ; EQUAL ; eq = equality ; hint=option(hint)
+   { ProofDeclaration (lemma_name, args, eq, hint) }
+argument:
+| nm = IDENT; COLON; t = IDENT { TypedVariable (nm, t) }
+| LPAREN ; arg = argument; RPAREN { arg }
+equality:
+| LPAREN ; e = equality ; RPAREN { e }
+| lhs = expression ; EQUAL ; rhs = expression { Equality (lhs, rhs) }
+hint:
+| HINT ; AXIOM ; ENDCOMMENT { Axiom }
 expression:
-| LPAREN ; expr = expression ; RPAREN { expr }
-| str = STRING { String str }
-| var = IDENT { Identifier var }
-| num = NUM { Number num}
-| func = IDENT ; LPAREN ; args = list(expression) ; RPAREN { Function (func, args) }
-
-type_variants:
-| LCUR ; variants = list(type_variant) ; RCUR { variants }
-
-type_variant:
-| PIPE ; variant = IDENT { TypeVariant (variant, []) }
-| PIPE ; variant = IDENT ; LPAREN ; args = list(IDENT, IDENT) ; RPAREN { TypeVariant (variant, args) }
-
-proof_statement:
-| LET ; PROVE ; name = IDENT ; LPAREN ; args = list(IDENT) ; RPAREN ; expr = expression ;
-    hint = hint_option { Prove (name, args, expr, hint) }
-| LET ; AXIOM ; name = IDENT ; LPAREN ; args = list(IDENT) ; RPAREN ; expr = expression { Axiom (name, args, expr) }
-
-hint_option:
-| HINT ; AXIOM { AxiomHint }
-| HINT ; INDUCTION ; var = IDENT { Induction var }
-| /* empty */ { NoHint }
-
-
-(*
-| e = expression ; EOF { [e]}
-expression:
-| LPAREN ; e = expression ; RPAREN { e }
+| LPAREN ; e = expression_with_commas ; RPAREN { e }
+| lhs = expression ; arg = IDENT { Application (lhs, Identifier arg) }
+| lhs = expression ; LPAREN ; arg = expression_with_commas ; RPAREN
+   { Application (lhs, arg) }
 | nm = IDENT { Identifier nm }
-| e1 = expression ; nm = IDENT { Applicaion (e1, Identifier nm)}
-| e1 = expression ; LPAREN ; e2 = expression ; RPAREN { Applicaion (e1, e2)}
-*)
+
+// these aren't in the gettingstarted.ml syntax,
+// but here's a suggestion to deal with these anyways.
+// We're using that "," is not a valid identifier
+// We're using it as an identifier that stands for the function (fun x y -> (x, y))
+// This also means we're representing (x,y,z) and ((x,y),z) as the same thing.
+expression_with_commas:
+| e = expression { e }
+| e1 = expression_with_commas ; COMMA ; e2 = expression
+  { Application (Application (Identifier ",", e1), e2)}

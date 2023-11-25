@@ -1,75 +1,128 @@
 include Ast
+
 module Parser = Parser
 module Lexer = Lexer
 
-let parse (s : string) : statement list =
+module Substitution = struct
+  module MM = Map.Make(String)
+  type 'a t = 'a MM.t
+  let empty : 'a t = MM.empty
+
+  let singleton (key : string) (value : 'a) : 'a t =
+    MM.singleton key value
+
+  let merge (s1 : 'a t) (s2 : 'a t) : 'a t option =
+    let merged_map = MM.merge (fun _key v1_opt v2_opt ->
+        match v1_opt, v2_opt with
+        | Some _, Some v2 -> Some v2
+        | Some v1, None | None, Some v1 -> Some v1
+        | None, None -> None
+      ) s1 s2
+    in
+    if MM.is_empty merged_map then
+      None
+    else
+      Some merged_map
+
+  let find (key : string) (s : 'a t) : 'a =
+    MM.find key s
+end
+
+let parse (s : string) : declaration list =
   let lexbuf = Lexing.from_string s in
   let ast = Parser.main Lexer.token lexbuf in
-    ast
+     ast
 
-let string_of_expression (e : expression) : string =
+let rec string_of_expression (e : expression) : string =
   match e with
-  | Identifier v -> v
-  | Number n -> string_of_int n
-  | String str -> "\"" ^ str ^ "\""
-  | Function(func, args) -> func ^ "(" ^ String.concat ", " (List.map string_of_expression args) ^ ")"
-  | Equation(e1, e2) -> string_of_expression e1 ^ " = " ^ string_of_expression e2
+  | Application (e, arg) ->
+    (string_of_expression e) ^ " (" ^ string_of_expression arg ^ ")"
+  | Identifier name -> name
 
-let rec string_of_statements ntabs (es : statement list) : string = 
-  List.fold_left (fun acc stmt -> acc ^ string_of_statement ntabs stmt ^ "\n") "" es
+let string_of_hint (h : hint option) : string =
+  match h with
+  | Some Axiom -> "\n(*hint: axiom *)"
+  | None -> ""
 
-and string_of_statement (ntabs : int) (stmt : statement) : string =
-  let tabs = String.make ntabs '\t'
-  in match stmt with
-    | Declaration (var, expr) -> tabs ^ "var " ^ var ^ " = " ^ string_of_expression expr
-    | Assignment (var, expr) -> tabs ^ var ^ " = " ^ string_of_expression expr
-    | If_Else (expr, thenS, elseS) ->
-      tabs ^ "if (" ^ string_of_expression expr ^ ") {\n" ^
-      string_of_statements (ntabs + 1) thenS ^
-      tabs ^ "} else {\n" ^
-      string_of_statements (ntabs + 1) elseS ^
-      tabs ^ "}"
-    | TypeDeclaration (name, variants) -> tabs ^ "type " ^ name ^ " = " ^ string_of_type_variants variants
-    | Proof (proof) -> tabs ^ string_of_proof proof
+let string_of_equality (e : equality) : string =
+  match e with
+  | Equality (e1, e2) -> "(" ^ (string_of_expression e1) ^ " = " ^ (string_of_expression e2) ^ ")"
 
-and string_of_type_variants (variants : type_variant list) : string =
-  String.concat " | " (List.map string_of_type_variant variants)
-    
-and string_of_type_variant (variant : type_variant) : string =
-  match variant with
-  | TypeVariant (name, []) -> name
-  | TypeVariant (name, args) -> name ^ " of " ^ String.concat " * " (List.map (fun (t, n) -> t ^ " " ^ n) args)
-    
-and string_of_proof (proof : proof_statement) : string =
-  match proof with
-  | Prove (name, expr, hint) -> "prove " ^ name ^ " = " ^ string_of_expression expr ^ string_of_hint hint
-  | Axiom (name, expr) -> "axiom " ^ name ^ " = " ^ string_of_expression expr
-    
-and string_of_hint (hint : hint_option) : string =
-  match hint with
-  | NoHint -> ""
-  | Hint h -> " (*hint: " ^ string_of_hint_type h ^ "*)"
-    
-and string_of_hint_type (hint : hint_type) : string =
-  match hint with
-  | AxiomHint -> "axiom"
-  | Induction var -> "induction " ^ var
-    
-let string_of_program (es : statement list) : string = 
-  string_of_statements 0 es
+let string_of_typedvariable (TypedVariable (name, type_name) : typedVariable) : string =
+  "(" ^ name ^ " : " ^ type_name ^ ")"
 
+let string_of_declaration (d : declaration) : string =
+  match d with
+  | ProofDeclaration (name, args, equality, hint) ->
+    let arg_strings = List.map string_of_typedvariable args in
+    "let (*prove*) " ^ name ^ " " ^ (String.concat " " arg_strings) ^ " = "
+     ^ string_of_equality equality ^ string_of_hint hint
 
-(*
-  | Application (e1, e2) ->
-    (string_of_expression e1)^ " " ^(string_of_expression_with_parens e2)
-and string_of_expression_with_parens e
-  = match e with
-  | Identifier nm -> nm
-  | Application (e1, e2) -> "(" ^ (string_of_expression e) ^ ")"
+let rec produce_proof (eq : equality) (eq_list : (string * string list * equality) list) : string list =
+  match eq with
+  | Equality (lhs, rhs) ->
+    let lhs_steps = perform_steps lhs eq_list in
+    let rhs_steps = perform_steps rhs eq_list in
+    let proof_steps = List.map2 (fun (name, lhs_step) (_, rhs_step) ->
+      Printf.sprintf "%s\n= {%s}\n%s" lhs_step name rhs_step) lhs_steps rhs_steps in
+    proof_steps @ ["(* Insert ??? if lhs and rhs stay different *)"]
 
-let rec string_of_pattern (p : pattern) : string =
-  match p with
-  | Constructor (name, []) -> name
-  | Constructor (name, patterns) -> name ^ " (" ^ (String.concat ", " (List.map string_of_pattern patterns)) ^ ")"
-  (* ... of course, this part will depend on what your datatypes look like. *)
-*)
+and perform_steps (expr : expression) (eq_list : (string * string list * equality) list) : (string * string) list =
+  let rec helper expr steps =
+    match try_equalities expr eq_list with
+    | Some (name, new_expr) -> helper new_expr ((name, string_of_expression new_expr) :: steps)
+    | None -> List.rev steps
+  in
+  helper expr []
+
+and try_equalities (expr : expression) (eq_list : (string * string list * equality) list) : (string * expression) option =
+  List.fold_left (fun acc (name, vars, eq) ->
+    match acc with
+    | Some _ -> acc
+    | None ->
+      match attempt_rewrite vars eq expr with
+      | Some new_expr -> Some (name, new_expr)
+      | None -> None) None eq_list
+
+and attempt_rewrite (vars : string list) (eq : equality) (expr : expression) : expression option =
+  match expr, eq with
+  | _, Equality (lhs, _) ->
+    (* Attempt to match lhs with the expression *)
+    match match_expressions vars lhs expr with
+    | Some matching_expr -> Some matching_expr
+    | None ->
+      (* If no direct match, recursively attempt rewrite on subexpressions *)
+      (match expr with
+      | Application (fn, arg) ->
+        (match attempt_rewrite vars eq arg with
+        | Some rewritten_arg -> Some (Application (fn, rewritten_arg))
+        | None -> None)
+      (* Add more cases for other expression types if needed *)
+      | _ -> None)
+
+and match_expressions (variables : string list) (pattern : expression) (expr : expression) : expression option =
+  match pattern, expr with
+  | Identifier var, _ when List.mem var variables -> Some expr
+  | Application (p1, p2), Application (e1, e2) ->
+    (match match_expressions variables p1 e1, match_expressions variables p2 e2 with
+    | Some matched_p1, Some matched_p2 -> Some (Application (matched_p1, matched_p2))
+    | _ -> None)
+  (* Add more cases for other expression types if needed *)
+  | _ -> None
+
+let produce_output_simple (declarations : declaration list) : string =
+  let rec helper acc eq_list = function
+    | [] -> acc
+    | ProofDeclaration (name, args, equality, hint) :: rest ->
+      let proof_statement =
+        match hint with
+        | Some Axiom -> string_of_declaration (ProofDeclaration (name, args, equality, hint))
+        | None ->
+          let proof_steps = produce_proof equality eq_list in
+          let proof_str = String.concat "\n" proof_steps in
+          string_of_declaration (ProofDeclaration (name, args, equality, hint)) ^ "\n" ^ proof_str
+      in
+      let new_eq_list = (name, List.map (fun (TypedVariable (n, _)) -> n) args, equality) :: eq_list in
+      helper (acc ^ proof_statement ^ "\n") new_eq_list rest
+  in
+  helper "" [] declarations
