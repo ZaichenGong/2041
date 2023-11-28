@@ -67,6 +67,7 @@ let rec produce_proof (eq : equality) (eq_list : (string * string list * equalit
       Printf.sprintf "%s\n= {%s}\n%s" lhs_step name rhs_step) lhs_steps rhs_steps in
     proof_steps @ ["(* Insert ??? if lhs and rhs stay different *)"]
 
+
 and perform_steps (expr : expression) (eq_list : (string * string list * equality) list) : (string * string) list =
   let rec helper expr steps =
     match try_equalities expr eq_list with
@@ -125,4 +126,5 @@ let produce_output_simple (declarations : declaration list) : string =
       let new_eq_list = (name, List.map (fun (TypedVariable (n, _)) -> n) args, equality) :: eq_list in
       helper (acc ^ proof_statement ^ "\n") new_eq_list rest
   in
-  helper "" [] declarations
+  let result = helper "" [] declarations in
+  "(* Generated Proof *)\n" ^ result

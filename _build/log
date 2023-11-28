@@ -3,7 +3,7 @@
 # Shared cache: disabled
 # Workspace root: /mnt/c/users/ashle/2041
 # Auto-detected concurrency: 8
-$ /home/ash/.opam/csci2041/bin/ocamlc.opt -config > /tmp/dune_a845e7_output
+$ /home/ash/.opam/csci2041/bin/ocamlc.opt -config > /tmp/dune_a3f337_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -101,13 +101,10 @@ $ /home/ash/.opam/csci2041/bin/ocamlc.opt -config > /tmp/dune_a845e7_output
 #      }
 #  ; instrument_with = []
 #  }
-$ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamldep.opt -modules -impl lib/ast.ml) > _build/default/lib/.expression.objs/expression__Ast.impl.d
 $ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamldep.opt -modules -impl lib/expression.ml) > _build/default/lib/.expression.objs/expression.impl.d
-$ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.expression.objs/byte -I /home/ash/.opam/csci2041/lib/menhirLib -no-alias-deps -opaque -open Expression__ -o lib/.expression.objs/byte/expression__Ast.cmo -c -impl lib/ast.ml)
-$ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.expression.objs/byte -I lib/.expression.objs/native -I /home/ash/.opam/csci2041/lib/menhirLib -intf-suffix .ml -no-alias-deps -opaque -open Expression__ -o lib/.expression.objs/native/expression__Ast.cmx -c -impl lib/ast.ml)
 $ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.expression.objs/byte -I /home/ash/.opam/csci2041/lib/menhirLib -no-alias-deps -opaque -open Expression__ -o lib/.expression.objs/byte/expression.cmo -c -impl lib/expression.ml)
-$ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/expression.cma lib/.expression.objs/byte/expression__.cmo lib/.expression.objs/byte/expression__Ast.cmo lib/.expression.objs/byte/expression__Parser.cmo lib/.expression.objs/byte/expression__Lexer.cmo lib/.expression.objs/byte/expression.cmo)
 $ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I bin/.main.eobjs/byte -I /home/ash/.opam/csci2041/lib/menhirLib -I lib/.expression.objs/byte -no-alias-deps -opaque -o bin/.main.eobjs/byte/dune__exe__Main.cmi -c -intf bin/main.mli)
+$ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/expression.cma lib/.expression.objs/byte/expression__.cmo lib/.expression.objs/byte/expression__Ast.cmo lib/.expression.objs/byte/expression__Parser.cmo lib/.expression.objs/byte/expression__Lexer.cmo lib/.expression.objs/byte/expression.cmo)
 $ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.expression.objs/byte -I lib/.expression.objs/native -I /home/ash/.opam/csci2041/lib/menhirLib -intf-suffix .ml -no-alias-deps -opaque -open Expression__ -o lib/.expression.objs/native/expression.cmx -c -impl lib/expression.ml)
 $ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I bin/.main.eobjs/byte -I bin/.main.eobjs/native -I /home/ash/.opam/csci2041/lib/menhirLib -I lib/.expression.objs/byte -I lib/.expression.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.main.eobjs/native/dune__exe__Main.cmx -c -impl bin/main.ml)
 $ (cd _build/default && /home/ash/.opam/csci2041/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/expression.cmxa lib/.expression.objs/native/expression__.cmx lib/.expression.objs/native/expression__Ast.cmx lib/.expression.objs/native/expression__Parser.cmx lib/.expression.objs/native/expression__Lexer.cmx lib/.expression.objs/native/expression.cmx)

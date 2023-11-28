@@ -3,6 +3,7 @@
    Names may vary, but these are the things this executable needs.
    In any case, these four definitions should be the only things you need to change. *)
 let string_of_declaration = Expression.string_of_declaration
+let produce_output_simple = Expression.produce_output_simple
 let mainParser = Expression.Parser.main
 let mainLexer = Expression.Lexer.token
 module Parser : (sig exception Error end) = Expression.Parser
@@ -16,6 +17,7 @@ module Parser : (sig exception Error end) = Expression.Parser
 (* the function that prints everything. *)
 (* has a side-effect (namely: it prints) so it belongs here *)
 let print_all = Stdlib.List.map (fun decl -> print_endline (string_of_declaration decl))
+let print_proof = (fun decl -> print_endline (produce_output_simple decl))
 
 (* An improved function to parse everything from a 'channel'.
  * It has a side-effect (namely: reads from an input-channel)
@@ -84,6 +86,7 @@ let with_file fn (filename : string) : unit
 
 (* the usage message is based of the name of the executable *)
 let usage_msg = Sys.executable_name ^ " [--printback <filename>]"
+(*let usage_msg = Sys.executable_name ^ " [--printback <filename>]"*)
 
 (* Here is a list of arguments that the executable can take.
    It's simply given by a list of triples:
@@ -92,7 +95,10 @@ let usage_msg = Sys.executable_name ^ " [--printback <filename>]"
    Note that "Arg.String" takes a function of type: string -> unit.
    This is where we plug in the 'with_file' function we wrote above. *)
 let speclist =
-  [("--printback", Arg.String (with_file print_all), "Print the parsed file back out")]
+  [
+    ("--printback", Arg.String (with_file print_all), "Print the parsed file back out");
+    ("--simple", Arg.String (with_file print_proof), "Parse the file, but don't print anything")
+  ]
 
 let _ = Arg.parse
            speclist
@@ -115,26 +121,3 @@ dune build
  but I haven't gotten around to that yet.)
 
 *)
-(*
-(* Define a new function to print the parsed file back out *)
-let printback_file (filename : string) : unit =
-  with_file print_all filename
-
-(* Updated usage message *)
-let usage_msg = Sys.executable_name ^ " [--printback <filename>]"
-
-(* Updated speclist to use the new printback_file function *)
-let speclist =
-  [("--printback", Arg.String printback_file, "Print the parsed file back out")]
-
-(* ... (previous code) ... *)
-
-(* Updated main function to use the new printback_file function *)
-let () =
-  Arg.parse
-    speclist
-    (fun x -> print_endline ("Unexpected argument: "^x))
-    usage_msg;
-
-  (* printing an extra newline at the end of it all *)
-  print_newline ()*)
