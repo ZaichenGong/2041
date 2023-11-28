@@ -3,30 +3,16 @@ include Ast
 module Parser = Parser
 module Lexer = Lexer
 
-module Substitution = struct
-  module MM = Map.Make(String)
-  type 'a t = 'a MM.t
-  let empty : 'a t = MM.empty
+let empty = []
+let singleton x y = [(x,y)]
+let merge s1 s2 = match s1 with
+  | [] -> Some s2 (* this case is actually correct, but it shouldn't be needed once the other one is fixed *)
+  | _ -> Some s1 (* todo: fix *)
 
-  let singleton (key : string) (value : 'a) : 'a t =
-    MM.singleton key value
-
-  let merge (s1 : 'a t) (s2 : 'a t) : 'a t option =
-    let merged_map = MM.merge (fun _key v1_opt v2_opt ->
-        match v1_opt, v2_opt with
-        | Some _, Some v2 -> Some v2
-        | Some v1, None | None, Some v1 -> Some v1
-        | None, None -> None
-      ) s1 s2
-    in
-    if MM.is_empty merged_map then
-      None
-    else
-      Some merged_map
-
-  let find (key : string) (s : 'a t) : 'a =
-    MM.find key s
-end
+let find x s = match s with
+  | [] -> failwith "Not found (find was passed an empty list)"
+  | [(k,v)] -> if x = k then v else failwith "Not found (find failed but the substitution being passed in really does not contain the variable)"
+  | _ -> failwith "Find failed (key not found because this part of the find function is utterly broken)"
 
 let parse (s : string) : declaration list =
   let lexbuf = Lexing.from_string s in
